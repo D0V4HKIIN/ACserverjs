@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<link rel="shortcut icon" href="/icon.png" type="image/x-icon">
+	<title>ASSETTO CORSA SERVER</title>
+	<style>
+		/* Add a black background color to the top navigation */
+		.topnav {
+			background-color: #333;
+			overflow: hidden;
+		}
+
+		/* Style the links inside the navigation bar */
+		.topnav a {
+			float: left;
+			color: #f2f2f2;
+			text-align: center;
+			padding: 14px 16px;
+			text-decoration: none;
+			font-size: 17px;
+			cursor: pointer;
+		}
+
+		/* Change the color of links on hover */
+		.topnav a:hover {
+			background-color: #ddd;
+			color: black;
+		}
+
+		/* Add a color to the active/current link */
+		.topnav a.active {
+			background-color: #4CAF50;
+			color: white;
+		}
+
+		.menu {
+			width: 100%;
+			height: 100%;
+			float: left;
+
+			background-color: #929292;
+		}
+
+		body {
+			background-color: #b6b6b6;
+		}
+
+		table {
+			float: left;
+			margin: 16px 16px;
+			border: 2px solid #333;
+		}
+	</style>
+	<script type="text/javascript">
+		//TOP BAR MENU
+		function MenuShow(m) {
+			document.getElementById("Options").style = "display: none"
+			document.getElementById("Cars").style = "display: none"
+			document.getElementById("Tracks").style = "display: none"
+			document.getElementById("Presets").style = "display: none"
+
+			document.getElementById(m).style = "display: block"
+		}
+
+
+		//COOKIES
+		function getCookie(cname) {
+			var name = cname + "=";
+			var decodedCookie = decodeURIComponent(document.cookie);
+			var ca = decodedCookie.split(';');
+			for (var i = 0; i < ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0) == ' ') {
+					c = c.substring(1);
+				}
+				if (c.indexOf(name) == 0) {
+					return c.substring(name.length, c.length);
+				}
+			}
+			return "";
+		}
+
+		function setCookie(cname, cvalue) {
+			document.cookie = cname + "=" + cvalue + ";path=/";
+		}
+
+
+		//LOAD PRESETS
+		function loadFile(filePath) {
+			var result = null;
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.open("GET", filePath, false);
+			xmlhttp.send();
+			if (xmlhttp.status == 200) {
+				result = xmlhttp.responseText;
+			} else {
+				return false
+			}
+			return result;
+		}
+
+		function getPresetPath(n) {
+			return "/presets/SERVER_" + n.toString().padStart(2, "0") + "/server_cfg.ini"
+		}
+
+		function parsePreset(file) {
+			var arr = file.split("\r\n");
+			var obj = {};
+			for (i = 0; i < arr.length; i++) {
+				if (arr[i] == "") continue;
+				if (arr[i][0] == "[") {
+					key = arr[i].slice(1, -1);
+					obj[key] = {};
+				} else {
+					t = arr[i].split("=");
+					obj[key][t[0]] = t[1];
+				}
+			}
+			return obj
+		}
+
+		function setAttributes(obj) {//changes inputs
+			Object.entries(obj).forEach(entry => {
+				const [key, val] = entry;
+				d = document.getElementById(key);
+				if (d) {
+					switch (d.type) {
+						case "text":
+						case "number":
+						case "select-one":
+							d.value = val;
+							break;
+						case "checkbox":
+							d.checked = val == 1;
+							break;
+						default:
+							console.log(d.type)
+					}
+				} else {
+					console.log(key)
+				}
+			});
+		}
+
+		function loadPreset(n) {
+			document.getElementById("preset").value = n;
+			setCookie("preset", n)
+			var preset = parsePreset(loadFile(getPresetPath(n)));
+			console.log(preset)
+
+			//change buttons and stuff
+			setAttributes(preset.SERVER);
+
+			if (preset.DYNAMIC_TRACK) {
+				setAttributes(preset.DYNAMIC_TRACK);
+			}
+		}
+
+		var presets = []
+		function findPresets() {
+			presets = []
+			var i = 0;
+			var file = loadFile(getPresetPath(i));
+			while (file) {
+				presets.push(parsePreset(file).SERVER.NAME)
+				i++;
+				file = loadFile(getPresetPath(i));
+			}
+			console.log(presets)
+			sel = document.getElementById("preset");
+			for (var i = 0; i < presets.length; i++) {
+				option = document.createElement("option");
+				option.value = i;
+				option.innerHTML = presets[i];
+				sel.appendChild(option);
+			}
+		}
+
+		//keep this
+		window.onload = function () {
+			findPresets();
+			loadPreset(getCookie("preset"));
+		}
+	</script>
+</head>
+
+<body>
+	<div class="topnav">
+		<a class="active" onclick="MenuShow('Options')">Options</a>
+		<a onclick="MenuShow('Tracks')">Tracks</a>
+		<a onclick="MenuShow('Cars')">Cars</a>
+		<a onclick="MenuShow('Presets')">Presets</a>
+	</div>
+	<div class="menu" id="Options" style="display: block">
+		<table>
+			<tr>
+				<th>Basic settings</th>
+			</tr>
+			<tr>
+				<td>
+					Name:
+				</td>
+				<td>
+					<input id="NAME">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Password:
+				</td>
+				<td>
+					<input id="PASSWORD">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Admin Password:
+				</td>
+				<td>
+					<input id="ADMIN_PASSWORD">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Pickup Mode:
+				</td>
+				<td>
+					<input type="checkbox" id="PICKUP_MODE_ENABLED" checked>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Pickup Locked Entry List:
+				</td>
+				<td>
+					<input type="checkbox" id="LOCKED_ENTRY_LIST">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Result Screen Time:
+				</td>
+				<td>
+					<input type="number" id="RESULT_SCREEN_TIME" value="60">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Loop Mode:
+				</td>
+				<td>
+					<input type="checkbox" id="LOOP_MODE" checked>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Show on Lobby:
+				</td>
+				<td>
+					<input type="checkbox" id="REGISTER_TO_LOBBY" checked>
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>Advanced settings</th>
+			</tr>
+			<tr>
+				<td>
+					UDP Port:
+				</td>
+				<td>
+					<input type="number" id="UDP_PORT">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					TCP Port:
+				</td>
+				<td>
+					<input type="number" id="TCP_PORT">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					HTTP Port:
+				</td>
+				<td>
+					<input type="number" id="HTTP_PORT">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Packets Hz:
+				</td>
+				<td>
+					<input type="number" id="CLIENT_SEND_INTERVAL_HZ" value="18">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Threads:
+				</td>
+				<td>
+					<input type="number" id="NUM_THREADS" value="2">
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>Assits</th>
+			</tr>
+			<tr>
+				<td>
+					ABS Allowed:
+				</td>
+				<td>
+					<select id="ABS_ALLOWED">
+						<option value="1">
+							Factory
+						</option>
+						<option value="0">
+							Denied
+						</option>
+						<option value="2">
+							Forced
+						</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					TC Allowed:
+				</td>
+				<td>
+					<select id="TC_ALLOWED">
+						<option value="1">
+							Factory
+						</option>
+						<option value="0">
+							Denied
+						</option>
+						<option value="2">
+							Forced
+						</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Stability Aid:
+				</td>
+				<td>
+					<input type="checkbox" id="STABILITY_ALLOWED">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Auto Clutch:
+				</td>
+				<td>
+					<input type="checkbox" id="AUTOCLUTCH_ALLOWED">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Tyre Blankets:
+				</td>
+				<td>
+					<input type="checkbox" id="TYRE_BLANKETS_ALLOWED" checked>
+				</td>
+			</tr>
+
+			<tr>
+				<td>
+					Force Virtual Mirror:
+				</td>
+				<td>
+					<input type="checkbox" id="FORCE_VIRTUAL_MIRROR">
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>Realism</th>
+			</tr>
+			<tr>
+				<td>
+					Fuel Rate:
+				</td>
+				<td>
+					<input type="number" id="FUEL_RATE" value="0">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Damage Rate:
+				</td>
+				<td>
+					<input type="number" id="DAMAGE_MULTIPLIER" value="0">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Tyre Wear Rate:
+				</td>
+				<td>
+					<input type="number" id="TYRE_WEAR_RATE" value="0">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Allowed Tires Out:
+				</td>
+				<td>
+					<select id="ALLOWED_TYRES_OUT">
+						<option value="4">4</option>
+						<option value="3">3</option>
+						<option value="2">2</option>
+						<option value="1">1</option>
+						<option value="0">0</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Max Ballast:
+				</td>
+				<td>
+					<input type="number" id="MAX_BALLAST_KG" value="0">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Jump Start:
+				</td>
+				<td>
+					<select id="START_RULE">
+						<option value="0">Car Locked</option>
+						<option value="1">Teleport To Pit</option>
+						<option value="2">DriveThrough</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Disable Gas Cut Penalty:
+				</td>
+				<td>
+					<input type="checkbox" id="RACE_GAS_PENALTY_DISABLED" checked>
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>Voting and Banning</th>
+			</tr>
+			<tr>
+				<td>
+					Kick Vote Quorum:
+				</td>
+				<td>
+					<input type="number" id="KICK_QUORUM" value="85">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Session Vote Quorum:
+				</td>
+				<td>
+					<input type="number" id="VOTING_QUORUM" value="80">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Vote Duration:
+				</td>
+				<td>
+					<input type="number" id="VOTE_DURATION" value="20">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					BlackList:
+				</td>
+				<td>
+					<select id="BLACKLIST_MODE" value="20">
+						<option value="1">Kick Until Restart</option>
+						<option value="0">Kick Player</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Max Collisions x KM:
+				</td>
+				<td>
+					<input type="number" id="MAX_CONTACTS_PER_KM" value="-1">
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>Presets</th>
+			</tr>
+			<tr>
+				<td>
+					Preset:
+				</td>
+				<td>
+					<select id="preset" onchange="loadPreset(this.value)">
+					</select>
+				</td>
+			</tr>
+		</table>
+		<table>
+			<tr>
+				<th>Bonus</th>
+			</tr>
+			<tr>
+				<td>
+					nothing yet
+				</td>
+				<td>
+					nada
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="Tracks" style="display: none">
+		tracks
+	</div>
+	<div id="Cars" style="display: none">
+		cars
+	</div>
+	<div id="Presets" style="display: none">
+		presets
+	</div>
+</body>
+
+</html>

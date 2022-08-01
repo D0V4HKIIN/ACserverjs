@@ -1,0 +1,21 @@
+{
+  "name": "acserver",
+  "version": "0.0.1",
+  "description": "server for assetto corsa",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Jonas B.",
+  "license": "ISC",
+  "bin": "server.js",
+    "pkg": {
+    "scripts": "*.js",
+    "assets": ["index.html", "icon.png", "presets/**/*"]
+  }
+}
